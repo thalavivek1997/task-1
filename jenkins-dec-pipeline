@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('SCM-checkout') {
+            steps {
+                git branch: 'master', url:'https://github.com/thalavivek1997/task-1.git'
+            }
+        }
+        stage('Build Docker image') {
+            steps {
+                script {
+                    sh 'docker build -t vivekanand1997/newtask:latest .'
+                }
+            }
+        }
+        stage('Docker Image Push') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'docker_hub_pwd', variable: 'dockerhub')]) {
+                     sh "docker login -u vivekanand1997 -p ${dockerhub}"
+                     sh 'docker push vivekanand1997/newtask:latest'
+                    }
+                }
+            }
+        }
+        stage('Remove Previous Container') {
+            steps {
+                script {
+                    try{
+	             	sh 'docker rm -f task'
+                  	}catch(error){
+		             //  do nothing if there is an exception
+	                }
+                }
+            }
+        }
+    
+     stage('Deploy on Docker') {
+            steps {
+                script {
+                    sh 'docker run -d -p 8070:80 --name task vivekanand1997/newtask:latest' 
+                }
+            }
+          }
+    }
+}
